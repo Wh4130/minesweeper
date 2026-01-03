@@ -74,5 +74,11 @@
 [data-testid="stBaseButton-secondary"], 
 [data-testid="stBaseButton-primary"],
 [data-testid="stBaseButton"] {
-    margin: 0px !important; /* 讓按鈕邊框貼在一起 */
+    margin: 0.5px !important; /* 讓按鈕邊框貼在一起 */
+}
+
+
+/* Color for disabled buttons, for better UX */
+button:disabled {
+    background-color: #eeeeee !important; /* Red background */
 }

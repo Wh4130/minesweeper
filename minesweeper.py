@@ -15,10 +15,11 @@ def initialize_session_state():
 
     if "status" not in st.session_state:
         st.session_state['status'] = None
-    if "mine_coord" not in st.session_state:
+    if "mine_coord" and "safe_coord" not in st.session_state:
         coords = [(i, j) for i in range(12) for j in range(12)]
         random.shuffle(coords)
         st.session_state['mine_coord'] = coords[:20]
+        st.session_state['safe_coord'] = coords[20:]
     if "mines" not in st.session_state:
         st.session_state['mines'] = np.zeros((12, 12))
         for coord in st.session_state['mine_coord']:
@@ -79,6 +80,8 @@ def show_cell(row, col):
     
 def dig(row, col):
     st.session_state['game_state'][row, col] = 1
+    if (row, col) in st.session_state['safe_coord']:
+        st.session_state['safe_coord'].remove((row, col))
     st.session_state['disabled'][row, col] = True
     check_game_status()
 
@@ -111,6 +114,8 @@ def dig(row, col):
             else:
                 st.session_state['game_state'][i, j] = 1
                 st.session_state['disabled'][i, j] = True
+                if (i, j) in st.session_state['safe_coord']:
+                    st.session_state['safe_coord'].remove((i, j))
 
 def check_game_status():
     # the condition means a mine has been revealed
@@ -125,7 +130,6 @@ def check_game_status():
                     st.session_state['game_state'][i, j] = 1
         st.snow()
     if st.session_state['score'] == 124:
-        st.balloons()
         st.session_state['status'] = True
 
 
@@ -155,6 +159,16 @@ def remove_a_mine():
         st.rerun()
 
 # TODO Open save cell
+def open_a_safe_cell():
+    if st.session_state['lucky_stars'] <= 0:
+        st.error("No lucky star left!")
+
+    elif st.session_state['lucky_stars'] > 0:
+        to_open = random.randint(0, len(st.session_state['safe_coord']) - 1)
+        popped = st.session_state['safe_coord'].pop(to_open)
+        dig(*popped)
+        st.session_state['lucky_stars'] -= 1
+        st.rerun()
 
 def board():
     for i in range(12):
