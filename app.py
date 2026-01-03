@@ -32,6 +32,10 @@ with open("style.css", "r") as f:
 # """, unsafe_allow_html=True)
 initialize_session_state()
 
+import streamlit as st
+
+
+
 
 if st.session_state['status'] is None:
     get_score()   
@@ -39,11 +43,13 @@ if st.session_state['status'] is None:
 
 C1, C2, C3, C4 = st.columns(4)
 with C1:
-    st.metric("Score", st.session_state['score'], help = 'The number of safe cells that have been dug.')
+    st.metric("Score", int(st.session_state['score']), help = 'The number of safe cells that have been dug.')
 with C2:
-    st.metric("Lucky stars", st.session_state['lucky_stars'], help = 'The number of lucky stars that have not been used. You can use the lucky stars to remove a mine or dig a safe cell. You earn one lucky star whenever you earn 10 points.')
+    with st.container(key = "lucky_stars_container"):
+       
+        st.metric("Lucky stars", f"{int(st.session_state['lucky_stars'])}", help = 'The number of lucky stars that have not been used. You can use the lucky stars to remove a mine or dig a safe cell. You earn one lucky star whenever you earn 10 points.')
 with C3:
-    st.metric("Left Safe Cells", len(st.session_state['safe_coord']), help = 'The number of safe cells that have not been dug.')
+    st.metric("Safe Cells", len(st.session_state['safe_coord']), help = 'The number of safe cells that have not been dug.')
 with C4:
     st.metric("Left Mines", len(st.session_state['mine_coord']), help = 'The number of mines that have not been revealed.')
 

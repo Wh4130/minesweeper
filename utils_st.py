@@ -5,6 +5,16 @@ import datetime as dt
 import json
 from typing import List, Callable, Dict, Any, Tuple, Optional
 
+def hex_to_rgb(hex_code):
+    """Return (red, green, blue) for the color given as #rrggbb."""
+    hex_code = hex_code.lstrip('#')
+    lv = len(hex_code)
+    # The 'lv // 3' divides the string length by 3 to get the length of each color segment (R, G, B)
+    return tuple(int(hex_code[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+
+
+
 def stream_data(msg: str):
     """
     Generator that enables streaming writing
