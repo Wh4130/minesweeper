@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 
 from utils_st import render_sidebar, render_global_memory
-from minesweeper import initialize_session_state, board, get_score, get_lucky_stars, remove_a_mine, open_a_safe_cell
+from minesweeper import initialize_session_state, board, get_score, get_lucky_stars, remove_a_mine, open_a_safe_cell, check_game_status
 
 st.divider()
 st.title("Minesweeper")
@@ -40,6 +40,8 @@ import streamlit as st
 if st.session_state['status'] is None:
     get_score()   
     get_lucky_stars()
+    check_game_status()
+    
 
 C1, C2, C3, C4 = st.columns(4)
 with C1:
@@ -63,10 +65,9 @@ if st.session_state['status'] is None:
                     help = "Consume a lucky star and randomly reveal a mine and remove it."):
             remove_a_mine()
     with R2:
-        if st.button(":material/cleaning_services: Open a safe cell", type = "primary", width = "stretch", 
+        if st.button(":material/adjust: Dig a safe cell", type = "primary", width = "stretch", 
                     help = "Consume a lucky star and randomly dig a safe cell."):
             open_a_safe_cell()
-
 
 
 elif st.session_state['status'] == False:
@@ -77,6 +78,10 @@ elif st.session_state['status'] == False:
     st.error("**Game Over!**")
 
 elif st.session_state['status'] == True:
-    st.balloons()
+    
+    if st.button("Restart", type = "primary", width = "stretch"):
+        for _ in st.session_state:
+            del st.session_state[_]
+        st.rerun()
     st.success("You Sweeped All Mines!")
     

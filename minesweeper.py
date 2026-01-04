@@ -7,7 +7,11 @@ NUM_MAP = {
     1: ":green[1]",
     2: ":blue[2]",
     3: ":orange[3]",
-    4: ":red[4]"
+    4: ":red[4]",
+    5: ":red[5]",
+    6: ":red[6]",
+    7: ":red[7]",
+    8: ":red[8]"
 
 }
 
@@ -129,8 +133,10 @@ def check_game_status():
                 if st.session_state['mines'][i, j] == 1:
                     st.session_state['game_state'][i, j] = 1
         st.snow()
-    if st.session_state['score'] == 124:
+    if st.session_state['score'] >= 124:
         st.session_state['status'] = True
+        st.balloons()
+
 
 
 def get_score(): 
