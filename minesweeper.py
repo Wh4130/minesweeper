@@ -153,11 +153,17 @@ class MineSweeper:
 
 
     def mark_question(self, row, col):
-        st.session_state['mark_state'][row, col] = 2
+        if st.session_state['mark_state'][row, col] == 0:
+            st.session_state['mark_state'][row, col] = 2
+        else:
+            st.session_state['mark_state'][row, col] = 0
         st.session_state['mode'] = 'play'
 
     def mark_mine(self, row, col):
-        st.session_state['mark_state'][row, col] = 1
+        if st.session_state['mark_state'][row, col] == 0:
+            st.session_state['mark_state'][row, col] = 1
+        else:
+            st.session_state['mark_state'][row, col] = 0
         st.session_state['mode'] = 'play'
 
 
