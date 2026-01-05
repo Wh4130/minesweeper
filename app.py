@@ -1,7 +1,8 @@
 import streamlit as st
 import numpy as np
 
-from utils_st import render_sidebar, render_global_memory
+from utils_st import render_sidebar
+from constants import uiCont
 from minesweeper import initialize_session_state, MineSweeper
 
 st.divider()
@@ -24,9 +25,30 @@ st.set_page_config(page_title = "Minesweeper",
 with open("style.css", "r") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html = True)
     
+render_sidebar()
+
+
+# --------------------------------------------------------------------
+# * Initialize game
+if "lang" not in st.session_state:
+    st.session_state['lang'] = "正體中文"
+initialize_session_state()
+minesweeper = MineSweeper()
+
+if st.session_state['mode'] != 'play':
+    st.markdown("""<style>[data-testid="stBaseButton-secondary"] {
+    background-color: #edf8ef !important; /* Red background */
+}
+[data-testid="stBaseButton-secondary"]:disabled {
+    background-color: #dbf2dd !important; /* Red background */
+}</style>""", unsafe_allow_html = True)
+
 # --------------------------------------------------------------------
 # * Tabs
-TAB_GAME, TAB_RULE = st.tabs(["遊戲畫面", "規則"])
+TAB_GAME, TAB_RULE = st.tabs([
+    uiCont.tabs['game'][st.session_state['lang']], 
+    uiCont.tabs['rule'][st.session_state['lang']]
+    ])
 
 
 # --------------------------------------------------------------------
@@ -39,17 +61,10 @@ with open("rules/eng.md") as f:
 
 with TAB_RULE:
     st.subheader("**Rule Description 規則說明**")
-    lang = st.pills("Language", ["English", "繁體中文"], default = '繁體中文')
-    if lang == "English":
-        st.markdown(en)
+    if st.session_state['lang'] == "English":
+        st.markdown(uiCont.rule_en)
     else:
-        st.markdown(zhtw)
-
-# --------------------------------------------------------------------
-# * Initialize game
-initialize_session_state()
-minesweeper = MineSweeper()
-
+        st.markdown(uiCont.rule_zhtw)
 
 # --------------------------------------------------------------------
 # * Get score and lucky stars, and check game status whenever the app is rerun
@@ -63,15 +78,12 @@ with TAB_GAME:
 # * Render core metrices
     C1, C2, C3, C4 = st.columns(4)
     with C1:
-        st.metric("Score", int(st.session_state['score']), help = 'The number of safe cells that have been dug.')
+        st.metric(uiCont.metrics['score'][st.session_state['lang']], int(st.session_state['score']))
     with C2:
         with st.container(key = "lucky_stars_container"):
         
-            st.metric("Lucky stars", f"{int(st.session_state['lucky_stars'])}", help = 'The number of lucky stars that have not been used. You can use the lucky stars to remove a mine or dig a safe cell. You earn one lucky star whenever you earn 10 points.')
-    with C3:
-        st.metric("Safe Cells", len(st.session_state['safe_coord']), help = 'The number of safe cells that have not been dug.')
-    with C4:
-        st.metric("Left Mines", len(st.session_state['mine_coord']), help = 'The number of mines that have not been revealed.')
+            st.metric(uiCont.metrics['lucky_stars'][st.session_state['lang']], f"{int(st.session_state['lucky_stars'])}")
+    
 
 # --------------------------------------------------------------------
 # * Render game board
@@ -81,19 +93,54 @@ with TAB_GAME:
 # --------------------------------------------------------------------
 # * Check game status 
     if st.session_state['status'] is None:
-        L2, R2 = st.columns(2)
-        with L2:
-            if st.button(":material/cleaning_services: Remove a mine", type = "primary", width = "stretch", 
-                        help = "Consume a lucky star and randomly reveal a mine and remove it."):
-                minesweeper.remove_a_mine()
-        with R2:
-            if st.button(":material/adjust: Dig a safe cell", type = "primary", width = "stretch", 
-                        help = "Consume a lucky star and randomly dig a safe cell."):
-                minesweeper.open_a_safe_cell()
+        with C3:
 
+            # * 掃雷按鈕
+            if st.button(":material/cleaning_services: " + uiCont.btns['remove_a_mine'][st.session_state['lang']],
+                type = "primary", 
+                width = "stretch"):
+                    minesweeper.remove_a_mine()
+            
+            if st.session_state['mode'] == 'play':
+                if st.button(uiCont.btns['mark_mine'][st.session_state['lang']],
+                    type = 'tertiary', width = 'stretch'):
+                    st.session_state['mode'] = 'mark_mine'
+                    st.rerun()
+            elif st.session_state['mode'] == 'mark_mine':
+                if st.button(uiCont.btns['return_to_play'][st.session_state['lang']],
+                    type = 'tertiary', width = 'stretch'):
+                    st.session_state['mode'] = 'play'
+                    st.rerun()
+            st.space()
+
+
+        with C4:
+
+            # * 安全牌按鈕
+            if st.button(":material/right_click: " + uiCont.btns['dig_a_safe_cell'][st.session_state['lang']],
+                    type = "primary", 
+                    width = "stretch"):
+                    minesweeper.open_a_safe_cell()
+
+            if st.session_state['mode'] == 'play':
+                if st.button(uiCont.btns['mark_question'][st.session_state['lang']],
+                    type = 'tertiary', width = 'stretch'):
+                    st.session_state['mode'] = 'mark_question'
+                    st.rerun()
+            elif st.session_state['mode'] == 'mark_question':
+                if st.button(uiCont.btns['return_to_play'][st.session_state['lang']],
+                    type = 'tertiary', width = 'stretch', key = 'return_to_play_q'):
+                    st.session_state['mode'] = 'play'
+                    st.rerun()
+
+            # if st.button(uiCont.btns['mark_question'][st.session_state['lang']],
+            #      type = 'tertiary', width = 'stretch'):
+            #     pass
 
     elif st.session_state['status'] == False:
-        if st.button("Restart", type = "primary", width = "stretch"):
+        if st.button(":material/restart_alt: " + uiCont.btns['restart'][st.session_state['lang']],
+                      type = "primary", 
+                      width = "stretch"):
             for _ in st.session_state:
                 del st.session_state[_]
             st.rerun()
@@ -101,7 +148,9 @@ with TAB_GAME:
 
     elif st.session_state['status'] == True:
         
-        if st.button("Restart", type = "primary", width = "stretch"):
+        if st.button(":material/restart_alt: " + uiCont.btns['restart'][st.session_state['lang']],
+                      type = "primary", 
+                      width = "stretch"):
             for _ in st.session_state:
                 del st.session_state[_]
             st.rerun()

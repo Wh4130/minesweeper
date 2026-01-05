@@ -9,3 +9,4 @@
 > - **Lucky Stars:** For every **10 points** earned, you receive a :orange[**Lucky Star**]. Spend your stars to trigger these game-changing abilities:
 >   - :blue[**Mine Sweep**]: Consume one Lucky Star to randomly remove one mine from the map.
 >   - :blue[**Safe Tap**]: Consume one Lucky Star to instantly uncover one guaranteed safe cell.
+> - **Mark Your Path:** During the game, you can mark cells to strategize your moves. There are two types of markers to help you out: :orange[**Question Marks**] and :orange[**Flags**].

@@ -20,6 +20,8 @@ def initialize_session_state():
             st.session_state['mines'][coord] = 1
     if "game_state" not in st.session_state:
         st.session_state['game_state']= np.zeros((12, 12))
+    if "mark_state" not in st.session_state:
+        st.session_state['mark_state'] = np.zeros((12, 12))     # 1 -> mine mark; 2 -> question mark
     if "disabled" not in st.session_state:
         st.session_state['disabled'] = np.array([[False for _ in range(12)] for _ in range(12)])
     if "prox_mine_count" not in st.session_state:
@@ -30,6 +32,8 @@ def initialize_session_state():
         st.session_state['score_bonus'] = 0
     if "lucky_stars" not in st.session_state:
         st.session_state['lucky_stars'] = 0
+    if "mode" not in st.session_state:
+        st.session_state['mode'] = 'play'
 
 
     # * update prox_mine_count
@@ -69,6 +73,7 @@ class MineSweeper:
         :param row: row index
         :param col: column index
         """
+        
         if st.session_state['game_state'][row, col] == 1:
             # * dug cells
 
@@ -86,7 +91,18 @@ class MineSweeper:
         
         else:
             # * not dug cells
-            return " "
+            if st.session_state['mark_state'][row, col] == 2:
+                return "❓"
+            elif st.session_state['mark_state'][row, col] == 1:
+                return "🚩"
+            else:
+                return " "
+            
+        
+        
+    
+
+    
         
     def dig_session_handle(self, row, col):
         # * reveal dug cell
@@ -136,6 +152,25 @@ class MineSweeper:
                     self.dig_session_handle(i, j)
 
 
+    def mark_question(self, row, col):
+        st.session_state['mark_state'][row, col] = 2
+        st.session_state['mode'] = 'play'
+
+    def mark_mine(self, row, col):
+        st.session_state['mark_state'][row, col] = 1
+        st.session_state['mode'] = 'play'
+
+
+    def dig_or_mark_handler(self, row, col):
+        if st.session_state['mode'] == 'play':
+            self.dig(row, col)
+        elif st.session_state['mode'] == 'mark_question':
+            self.mark_question(row, col)
+        elif st.session_state['mode'] == 'mark_mine':
+            self.mark_mine(row, col)
+
+    
+
 
     def check_game_status(self):
         # the condition means a mine has been revealed
@@ -177,7 +212,7 @@ class MineSweeper:
         consume a lucky star to randomly reveal a mine and disable it
         """
         if st.session_state['lucky_stars'] <= 0:
-            st.error("No lucky star left!")
+            st.toast("No lucky star left!", icon = '‼️')
 
         elif st.session_state['lucky_stars'] > 0:
             to_remove = random.randint(0, len(st.session_state['mine_coord']) - 1)   # get a random mine
@@ -193,7 +228,7 @@ class MineSweeper:
         consume a lucky star to randomly dig a safe cell
         """
         if st.session_state['lucky_stars'] <= 0:
-            st.error("No lucky star left!")
+            st.toast("No lucky star left!", icon = '‼️')
 
         elif st.session_state['lucky_stars'] > 0:
             to_open = random.randint(0, len(st.session_state['safe_coord']) - 1)
@@ -214,7 +249,8 @@ class MineSweeper:
                     st.button(f"{self.show_cell(i, j)}", 
                             key = f"{i}_{j}", 
                             disabled = st.session_state['disabled'][i, j], 
-                            on_click = self.dig, args = (i, j))
+                            on_click = self.dig_or_mark_handler, args = (i, j),
+                            type = 'secondary')
     
     
     

@@ -79,6 +79,17 @@
     margin: 0px !important; /* 讓按鈕邊框貼在一起 */
 }
 
+[data-testid="stBaseButton-tertiary"] {
+    background-color: rgb(198, 198, 197);
+    border: 0dvh solid;
+    transition: transform 0.1s;
+    color: whitesmoke;
+}
+
+[data-testid="stBaseButton-primary"]:hover,  [data-testid="stBaseButton-tertiary"]:hover {
+    transform: scale(1.025);
+}
+
 
 /* Color for disabled buttons, for better UX */
 button:disabled {
@@ -88,3 +99,4 @@ button:disabled {
 blockquote {
     color: #201e1e
 }
+
