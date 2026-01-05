@@ -2,18 +2,8 @@ import streamlit as st
 import numpy as np
 import random
 
-NUM_MAP = {
-    0: " ",
-    1: ":green[1]",
-    2: ":blue[2]",
-    3: ":orange[3]",
-    4: ":red[4]",
-    5: ":red[5]",
-    6: ":red[6]",
-    7: ":red[7]",
-    8: ":red[8]"
+from constants import NUM_MAP
 
-}
 
 def initialize_session_state():
 
@@ -65,127 +55,166 @@ def initialize_session_state():
 
 
 
-initialize_session_state()
+# initialize_session_state()
 
-def show_cell(row, col):
-    if st.session_state['game_state'][row, col] == 1:
 
-        if st.session_state['mines'][row, col] == 0:
-            val = round(st.session_state['prox_mine_count'][row, col])
-            return NUM_MAP[val]
+class MineSweeper:
+    def __init__(self):
+        pass
+
+    def show_cell(self, row, col):
+        """
+        Docstring for show_cell
+
+        :param row: row index
+        :param col: column index
+        """
+        if st.session_state['game_state'][row, col] == 1:
+            # * dug cells
+
+            if st.session_state['mines'][row, col] == 0:
+                # if not mine -> return the mine count in the proximity
+                val = round(st.session_state['prox_mine_count'][row, col])
+                return NUM_MAP[val]
+            
+            if st.session_state['mines'][row, col] == 1:
+                return "💣"
         
-        if st.session_state['mines'][row, col] == 1:
-            return "💣"
-    
-    elif st.session_state['game_state'][row, col] == 2:
-        return "✨"
-    else:
-        return " "
-    
-def dig(row, col):
-    st.session_state['game_state'][row, col] = 1
-    if (row, col) in st.session_state['safe_coord']:
-        st.session_state['safe_coord'].remove((row, col))
-    st.session_state['disabled'][row, col] = True
-    check_game_status()
-
-    if st.session_state['status'] == False:
-        return
-    if st.session_state['prox_mine_count'][row, col] > 0:
-        return
+        elif st.session_state['game_state'][row, col] == 2:
+            # * sweeped mines
+            return "✨"
         
-    prox_h, prox_v = [row-1, row, row+1], [col-1, col, col+1]
+        else:
+            # * not dug cells
+            return " "
+        
+    def dig_session_handle(self, row, col):
+        # * reveal dug cell
+        st.session_state['game_state'][row, col] = 1
 
+        # * pop safe coordinates
+        if (row, col) in st.session_state['safe_coord']:
+            st.session_state['safe_coord'].remove((row, col))
 
-    for i in prox_h:
-        if i < 0 or i > 11:
-            continue
-        for j in prox_v:
-            if j < 0 or j > 11:
+        # * disable revealed cell
+        st.session_state['disabled'][row, col] = True
+    
+    def dig(self, row, col):
+        self.dig_session_handle(row, col)
+
+        self.check_game_status()
+
+        if st.session_state['status'] == False:
+            # * if any mine is dug
+            return
+        if st.session_state['prox_mine_count'][row, col] > 0:
+            # * if there is any mine in the proximity -> stop dig recursion
+            return
+        
+        # * define the proximity indices
+        prox_h, prox_v = [row-1, row, row+1], [col-1, col, col+1]
+
+        # * check whether to dig the cells in the proximity
+        for i in prox_h:
+            if i < 0 or i > 11:                  # if index out of bound -> continue
                 continue
+            for j in prox_v:
+                if j < 0 or j > 11:
+                    continue
 
-            # continue rules
-            if ((st.session_state['mines'][i, j] == 1)
-                or (st.session_state['game_state'][i, j] == 1)
-                or ((i != row) and (j != col))
-                ):
-                continue
+                # continue rules
+                if ((st.session_state['mines'][i, j] == 1)            # if mine -> do not dig
+                    or (st.session_state['game_state'][i, j] == 1)    # if already dug -> continue
+                    or ((i != row) and (j != col))                    # only dig cells in thetop, buttom, left, and right
+                    ):
+                    continue
 
-            if (st.session_state['prox_mine_count'][i, j] == 0):
-                # ** Recursion
-                dig(i, j)
+                if (st.session_state['prox_mine_count'][i, j] == 0):  # if there is no mine in the proximity -> recursion
+                    self.dig(i, j)
 
-            else:
-                st.session_state['game_state'][i, j] = 1
-                st.session_state['disabled'][i, j] = True
-                if (i, j) in st.session_state['safe_coord']:
-                    st.session_state['safe_coord'].remove((i, j))
+                else:                                                 # otherwise, only dig the cell itself but not dig further
+                    self.dig_session_handle(i, j)
 
-def check_game_status():
-    # the condition means a mine has been revealed
-    if any((st.session_state['game_state'] + st.session_state['mines'] == 2).flatten()):
-        st.session_state['status'] = False
-        st.session_state['disabled'] = np.array([[True for _ in range(12)] for _ in range(12)])
 
-        # render all mines
+
+    def check_game_status(self):
+        # the condition means a mine has been revealed
+        if any((st.session_state['game_state'] + st.session_state['mines'] == 2).flatten()):
+
+            st.session_state['status'] = False        # * -> game over
+            st.session_state['disabled'] = np.array([[True for _ in range(12)] for _ in range(12)]) # disable all cells
+
+            # render all mines
+            for i in range(12):
+                for j in range(12):
+                    if st.session_state['mines'][i, j] == 1:
+                        st.session_state['game_state'][i, j] = 1
+            st.snow()
+
+        if st.session_state['score'] >= 124:          # * full score
+            st.session_state['status'] = True
+            st.balloons()
+
+
+
+    def get_score(self): 
+        # * score: the number of cells that are safely dug
+        prev_score = st.session_state['score']
+        new_score = np.sum(st.session_state['game_state'] * (1 - st.session_state['mines']))
+        added_score = new_score - prev_score
+
+        st.session_state['score'] = new_score
+        st.session_state['score_bonus'] += added_score 
+
+    def get_lucky_stars(self):
+        # * every 10 point gain earns a lucky star
+        if st.session_state['score_bonus'] >= 10:
+            st.session_state['lucky_stars'] +=  min(st.session_state['score_bonus'] // 10, 5)
+            st.session_state['score_bonus'] = st.session_state['score_bonus'] % 10
+
+    def remove_a_mine(self):
+        """
+        consume a lucky star to randomly reveal a mine and disable it
+        """
+        if st.session_state['lucky_stars'] <= 0:
+            st.error("No lucky star left!")
+
+        elif st.session_state['lucky_stars'] > 0:
+            to_remove = random.randint(0, len(st.session_state['mine_coord']) - 1)   # get a random mine
+            popped = st.session_state['mine_coord'].pop(to_remove)                   # pop the coordinate
+            st.session_state['disabled'][popped] = True        # -> disable the mine
+            st.session_state['game_state'][popped] = 2         # -> means 'shown' but 'not clicked'
+            st.session_state['lucky_stars'] -= 1               # -> remove one lucky star
+            st.rerun()
+
+    # TODO Open save cell
+    def open_a_safe_cell(self):
+        """
+        consume a lucky star to randomly dig a safe cell
+        """
+        if st.session_state['lucky_stars'] <= 0:
+            st.error("No lucky star left!")
+
+        elif st.session_state['lucky_stars'] > 0:
+            to_open = random.randint(0, len(st.session_state['safe_coord']) - 1)
+            popped = st.session_state['safe_coord'].pop(to_open)
+            self.dig(*popped)
+            st.session_state['lucky_stars'] -= 1
+            st.rerun()
+
+    def board(self):
+        """
+        Render game board
+        """
         for i in range(12):
+            with st.container():
+                COLS = st.columns(12, gap = 'small')
             for j in range(12):
-                if st.session_state['mines'][i, j] == 1:
-                    st.session_state['game_state'][i, j] = 1
-        st.snow()
-    if st.session_state['score'] >= 124:
-        st.session_state['status'] = True
-        st.balloons()
-
-
-
-def get_score(): 
-    prev_score = st.session_state['score']
-    new_score = np.sum(st.session_state['game_state'] * (1 - st.session_state['mines']))
-    added_score = new_score - prev_score
-
-    st.session_state['score'] = new_score
-    st.session_state['score_bonus'] += added_score 
-
-def get_lucky_stars():
-    if st.session_state['score_bonus'] >= 10:
-        st.session_state['lucky_stars'] +=  min(st.session_state['score_bonus'] // 10, 5)
-        st.session_state['score_bonus'] = st.session_state['score_bonus'] % 10
-
-def remove_a_mine():
-    if st.session_state['lucky_stars'] <= 0:
-        st.error("No lucky star left!")
-
-    elif st.session_state['lucky_stars'] > 0:
-        to_remove = random.randint(0, len(st.session_state['mine_coord']) - 1)
-        popped = st.session_state['mine_coord'].pop(to_remove)
-        st.session_state['disabled'][popped] = True        # -> disable the mine
-        st.session_state['game_state'][popped] = 2         # -> means 'shown' but 'not clicked'
-        st.session_state['lucky_stars'] -= 1               # -> remove one lucky star
-        st.rerun()
-
-# TODO Open save cell
-def open_a_safe_cell():
-    if st.session_state['lucky_stars'] <= 0:
-        st.error("No lucky star left!")
-
-    elif st.session_state['lucky_stars'] > 0:
-        to_open = random.randint(0, len(st.session_state['safe_coord']) - 1)
-        popped = st.session_state['safe_coord'].pop(to_open)
-        dig(*popped)
-        st.session_state['lucky_stars'] -= 1
-        st.rerun()
-
-def board():
-    for i in range(12):
-        with st.container():
-            COLS = st.columns(12, gap = 'small')
-        for j in range(12):
-            with COLS[j]:
-                st.button(f"{show_cell(i, j)}", 
-                        key = f"{i}_{j}", 
-                        disabled = st.session_state['disabled'][i, j], 
-                        on_click = dig, args = (i, j))
+                with COLS[j]:
+                    st.button(f"{self.show_cell(i, j)}", 
+                            key = f"{i}_{j}", 
+                            disabled = st.session_state['disabled'][i, j], 
+                            on_click = self.dig, args = (i, j))
     
     
     

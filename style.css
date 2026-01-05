@@ -84,3 +84,7 @@
 button:disabled {
     background-color: #eeeeee !important; /* Red background */
 }
+
+blockquote {
+    color: #201e1e
+}
